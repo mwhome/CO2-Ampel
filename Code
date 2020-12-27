@@ -1,0 +1,510 @@
+/*********
+CO2 Luftqualität mit esp8266, ccs811 und ws2812
+*********/
+
+// Load Wi-Fi library
+#include <ESP8266WiFi.h>
+
+
+#include <Wire.h>    // I2C library
+#include "ccs811.h"  // CCS811 library
+#include <Adafruit_NeoPixel.h>
+
+// Wiring for ESP8266 NodeMCU boards: VDD to 3V3, GND to GND, SDA to D2, SCL to D1, nWAKE to D3 (or GND)
+CCS811 ccs811(D3); // nWAKE on D3
+
+#define NUM_PIXEL 35
+#define PIN 15
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_PIXEL, PIN, NEO_GRB + NEO_KHZ800);
+
+// Replace with your network credentials
+const char* ssid     = "yourSSID";
+const char* password = "yourPassword";
+
+// Set web server port number to 80
+WiFiServer server(80);
+
+// Variable to store the HTTP request
+String header;
+
+unsigned int CO2 = 400;
+unsigned int TVOC = 0;
+
+unsigned int IP01 = 1;
+unsigned int IP02 = 9;
+unsigned int IP03 = 2;
+
+unsigned int IP11 = 1;
+unsigned int IP12 = 6;
+unsigned int IP13 = 8;
+
+unsigned int IP21 = 0;
+unsigned int IP22 = 0;
+unsigned int IP23 = 4;
+
+unsigned int IP31 = 0;
+unsigned int IP32 = 0;
+unsigned int IP33 = 1;
+
+// Current time
+unsigned long currentTime = millis();
+// Previous time
+unsigned long previousTime = 0; 
+// Define timeout time in milliseconds (example: 2000ms = 2s)
+const long timeoutTime = 2000;
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("");
+  Serial.println("setup: Starting CCS811 basic demo");
+  Serial.print("setup: ccs811 lib  version: "); Serial.println(CCS811_VERSION);
+  strip.begin();
+  clearStrip();
+  strip.show();
+  strip.setBrightness(200);
+  // Enable I2C
+  Wire.begin();
+
+  // Enable CCS811
+  ccs811.set_i2cdelay(50); // Needed for ESP8266 because it doesn't handle I2C clock stretch correctly
+  bool ok = ccs811.begin();
+  if ( !ok ) Serial.println("setup: CCS811 begin FAILED");
+
+  // Print CCS811 versions
+  Serial.print("setup: hardware    version: "); Serial.println(ccs811.hardware_version(), HEX);
+  Serial.print("setup: bootloader  version: "); Serial.println(ccs811.bootloader_version(), HEX);
+  Serial.print("setup: application version: "); Serial.println(ccs811.application_version(), HEX);
+
+  // Start measuring
+  ok = ccs811.start(CCS811_MODE_1SEC);
+  if ( !ok ) Serial.println("setup: CCS811 start FAILED");
+
+
+  // Connect to Wi-Fi network with SSID and password
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(250);
+    Serial.print(".");
+    strip.setPixelColor(10,255,0,0); 
+     strip.show(); //Output on strip
+     delay(250);
+     clearStrip();
+     strip.show(); //Output on strip
+  }
+  // Print local IP address and start web server
+  Serial.println("");
+
+
+  
+  Serial.println("WiFi connected.");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+       clearStrip();
+         for (uint16_t L = 0; L < (NUM_PIXEL); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(3000);
+  
+
+IPAddress myIp = WiFi.localIP();
+Serial.println( myIp[0]);
+if ((myIp[0])<1)
+      {
+                clearStrip();
+          strip.setPixelColor(0,255,0,0); 
+      strip.show(); //Output on strip
+
+      delay(5000);
+         clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+      }
+else 
+{
+Serial.println(myIp[0]/100);
+IP01 = myIp[0]/100;
+clearStrip();
+         for (uint16_t L = 0; L < (IP01); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+Serial.println((myIp[0]-((myIp[0]/100)*100))/10);
+IP02 = (myIp[0]-((myIp[0]/100)*100))/10;
+clearStrip();
+         for (uint16_t L = 0; L < (IP02); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+Serial.println(myIp[0]-((myIp[0]/10)*10));
+IP03 =  myIp[0]-((myIp[0]/10)*10);
+clearStrip();
+         for (uint16_t L = 0; L < (IP03); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+      clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+}
+
+Serial.println( myIp[1]);
+if ((myIp[1])<1)
+      {
+                clearStrip();
+          strip.setPixelColor(0,255,0,0); 
+      strip.show(); //Output on strip
+
+      delay(5000);
+         clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+      }
+else 
+{
+Serial.println(myIp[1]/100);
+IP11 = myIp[1]/100;
+
+clearStrip();
+         for (uint16_t L = 0; L < (IP11); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+Serial.println((myIp[1]-((myIp[1]/100)*100))/10);
+IP12 = (myIp[1]-((myIp[1]/100)*100))/10;
+clearStrip();
+         for (uint16_t L = 0; L < (IP12); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+Serial.println(myIp[1]-((myIp[1]/10)*10));
+IP13 =  myIp[1]-((myIp[1]/10)*10);
+clearStrip();
+         for (uint16_t L = 0; L < (IP13); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+      clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+}
+
+Serial.println( myIp[2]);
+if ((myIp[2])<1)
+      {
+                clearStrip();
+          strip.setPixelColor(0,255,0,0); 
+      strip.show(); //Output on strip
+
+      delay(5000);
+         clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+      }
+else 
+{
+Serial.println(myIp[2]/100);
+IP21 = myIp[2]/100;
+clearStrip();
+         for (uint16_t L = 0; L < (IP21); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+Serial.println((myIp[2]-((myIp[2]/100)*100))/10);
+IP22 = (myIp[2]-((myIp[2]/100)*100))/10;
+
+      clearStrip();
+         for (uint16_t L = 0; L < (IP22); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+      
+
+Serial.println(myIp[2]-((myIp[2]/10)*10));
+IP23 =  myIp[2]-((myIp[2]/10)*10);
+clearStrip();
+         for (uint16_t L = 0; L < (IP23); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+      clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+}
+
+Serial.println( myIp[3]);
+if ((myIp[3])<1)
+      {
+                clearStrip();
+          strip.setPixelColor(0,255,0,0); 
+      strip.show(); //Output on strip
+
+      delay(5000);
+         clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+      }
+else 
+{
+
+Serial.println(myIp[3]/100);
+IP31 = myIp[3]/100;
+clearStrip();
+         for (uint16_t L = 0; L < (IP31); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+Serial.println((myIp[3]-((myIp[3]/100)*100))/10);
+IP32 = (myIp[3]-((myIp[3]/100)*100))/10;
+clearStrip();
+         for (uint16_t L = 0; L < (IP32); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+Serial.println(myIp[3]-((myIp[3]/10)*10));
+IP33 =  myIp[3]-((myIp[3]/10)*10);
+
+clearStrip();
+         for (uint16_t L = 0; L < (IP33); L++) {
+        
+
+        strip.setPixelColor(L,0,255,0); 
+      }
+      strip.show(); //Output on strip
+
+      delay(5000);
+
+      clearStrip();
+          strip.setPixelColor(0,0,0,255); 
+      strip.show(); //Output on strip
+
+      delay(3000);
+}
+  server.begin();
+
+
+}
+
+void loop(){
+  // Read
+  uint16_t eco2, etvoc, errstat, raw;
+  ccs811.read(&eco2, &etvoc, &errstat, &raw);
+CO2 = (eco2);
+TVOC = (etvoc);
+  // Print measurement results based on status
+  if ( errstat == CCS811_ERRSTAT_OK ) {
+    Serial.print("CCS811: ");
+    Serial.print("eco2=");  Serial.print(eco2);     Serial.print(" ppm  ");
+    Serial.print("etvoc="); Serial.print(etvoc);    Serial.print(" ppb  ");
+    Serial.println();
+  } else if ( errstat == CCS811_ERRSTAT_OK_NODATA ) {
+    Serial.println("CCS811: waiting for (new) data");
+  } else if ( errstat & CCS811_ERRSTAT_I2CFAIL ) {
+    Serial.println("CCS811: I2C error");
+  } else {
+    Serial.print("CCS811: errstat="); Serial.print(errstat, HEX);
+    Serial.print("="); Serial.println( ccs811.errstat_str(errstat) );
+  }
+
+
+  if ((eco2) < 2100) {
+
+    { int t = map(eco2, 350, 2100, 0, NUM_PIXEL);
+
+      for (uint16_t L = 0; L < t; L++) {
+        clearStrip();
+
+        strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
+      }
+      strip.show(); //Output on strip
+
+      delay(1000);
+    }
+  }
+
+  else {
+    (eco2) = 2100;
+    { int t = map(eco2, 350, 2100, 0, NUM_PIXEL);
+
+
+      for (uint16_t L = 0; L < t; L++) {
+        clearStrip();
+        strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
+      }
+      strip.show(); //Output on strip
+
+      delay(1000);
+    }
+
+
+    // Wait
+    delay(1000);
+  }
+}
+//Color wheel ################################################################
+uint32_t wheel(byte WheelPos) {
+  if (WheelPos < 85) {
+    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+  else if (WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  else {
+    WheelPos -= 170;
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+void clearStrip() {
+  for (int i = 0; i < NUM_PIXEL; i++) {
+    strip.setPixelColor(i, 0);
+  }
+  
+  
+  WiFiClient client = server.available();   // Listen for incoming clients
+
+  if (client) {                             // If a new client connects,
+    Serial.println("New Client.");          // print a message out in the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    currentTime = millis();
+    previousTime = currentTime;
+    while (client.connected() && currentTime - previousTime <= timeoutTime) { // loop while the client's connected
+      currentTime = millis();         
+      if (client.available()) {             // if there's bytes to read from the client,
+        char c = client.read();             // read a byte, then
+        Serial.write(c);                    // print it out the serial monitor
+        header += c;
+        if (c == '\n') {                    // if the byte is a newline character
+          // if the current line is blank, you got two newline characters in a row.
+          // that's the end of the client HTTP request, so send a response:
+          if (currentLine.length() == 0) {
+            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+            // and a content-type so the client knows what's coming, then a blank line:
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type:text/html");
+            client.println("Connection: close");
+            client.println();
+            
+            
+            
+            // Display the HTML web page
+            client.println("<!DOCTYPE html><html>");
+            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+            client.println("<link rel=\"icon\" href=\"data:,\">");
+         
+            
+            
+            // Web Page Heading
+            client.println("<body><h1>CO2 Ampel</h1>");
+            
+            // Display current state
+            client.println("<p>" );
+            client.println("CO2:");
+            client.println(CO2);
+            client.print("ppm");
+            client.println("<p>");
+
+            client.println("<p>" );
+            client.println("TVOC:");
+            client.println(TVOC);
+            client.print("ppb");
+            client.println("<p>");
+            
+            client.println("WiFi connected.");
+            client.println("<p>");
+            client.println("IP address: ");
+            client.println(WiFi.localIP());
+                       
+                       
+            client.println("</body></html>");
+            
+            // The HTTP response ends with another blank line
+            client.println();
+            // Break out of the while loop
+            break;
+          } else { // if you got a newline, then clear currentLine
+            currentLine = "";
+          }
+        } else if (c != '\r') {  // if you got anything else but a carriage return character,
+          currentLine += c;      // add it to the end of the currentLine
+        }
+      }
+    }
+    // Clear the header variable
+    header = "";
+    // Close the connection
+    client.stop();
+    Serial.println("Client disconnected.");
+    Serial.println("");
+  }
+}
