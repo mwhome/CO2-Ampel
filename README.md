@@ -2,9 +2,9 @@
 Eine CO2 Ampel mit esp8266, ccs811 Sensor und WS2812
 
 Im Code die wlan Zugangsdaten eintragen.
-Nach dem Einschalten blinkt die 10. LED rot bis eine Verbindung aufgebaut ist.
+Nach dem Einschalten blinkt die 17. LED rot bis eine Verbindung aufgebaut ist.
 Nach kurzem Aufleuchten aller LEDs in grün wird die IP-Adresse durch die LEDs ausgegeben.
-Anzahl der grün leuchtenden LEDs entspricht der Zahl (Erst die Hunderter, dann die Zehner und zuletzt die Einer), eine blaue LED stellt den Punkt dar, eine rote LED steht für die Null.
+Die 17. LED blinkt entsprechend, blau bedeutet nächste Zahl, rot bedeutet Punkt (also 192.168.0.25 wäre also 1 mal grün, blau, 9mal grün, blau, 2mal grün, blau, rot, 1mal grün, blau 6mal grün, blau, 8mal grün, blau, rot, blau, blau, blau, rot, blau, 2mal grün,blau, 5mal grün, blau, rot)
 
 Verdrahtung:
 Data des WS2812 auf D8 des ESP
