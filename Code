@@ -87,7 +87,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(250);
     Serial.print(".");
-    strip.setPixelColor(10,255,0,0); 
+    strip.setPixelColor(17,255,0,0); 
      strip.show(); //Output on strip
      delay(250);
      clearStrip();
@@ -109,247 +109,235 @@ void setup() {
       }
       strip.show(); //Output on strip
 
-      delay(3000);
+      delay(2000);
   
 
 IPAddress myIp = WiFi.localIP();
 Serial.println( myIp[0]);
-if ((myIp[0])<1)
-      {
-                clearStrip();
-          strip.setPixelColor(0,255,0,0); 
-      strip.show(); //Output on strip
 
-      delay(5000);
-         clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
-
-      delay(3000);
-      }
-else 
-{
 Serial.println(myIp[0]/100);
 IP01 = myIp[0]/100;
-clearStrip();
+         clearStrip();
          for (uint16_t L = 0; L < (IP01); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 Serial.println((myIp[0]-((myIp[0]/100)*100))/10);
 IP02 = (myIp[0]-((myIp[0]/100)*100))/10;
-clearStrip();
+         clearStrip();
          for (uint16_t L = 0; L < (IP02); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 Serial.println(myIp[0]-((myIp[0]/10)*10));
 IP03 =  myIp[0]-((myIp[0]/10)*10);
-clearStrip();
-         for (uint16_t L = 0; L < (IP03); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
-      clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
-
-      delay(3000);
-}
-
-Serial.println( myIp[1]);
-if ((myIp[1])<1)
-      {
-                clearStrip();
-          strip.setPixelColor(0,255,0,0); 
-      strip.show(); //Output on strip
-
-      delay(5000);
          clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
+         for (uint16_t L = 0; L < (IP03); L++) {
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 
-      delay(3000);
-      }
-else 
-{
+     clearStrip();
+     strip.setPixelColor(17,255,0,0); 
+     strip.show(); //Output on strip
+     delay(1000);
+     clearStrip();
+     delay(500);
+     strip.show(); //Output on strip
+Serial.println( myIp[1]);
+
 Serial.println(myIp[1]/100);
 IP11 = myIp[1]/100;
-
-clearStrip();
+         clearStrip();
          for (uint16_t L = 0; L < (IP11); L++) {
-        
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
 Serial.println((myIp[1]-((myIp[1]/100)*100))/10);
 IP12 = (myIp[1]-((myIp[1]/100)*100))/10;
-clearStrip();
+         clearStrip();
          for (uint16_t L = 0; L < (IP12); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 Serial.println(myIp[1]-((myIp[1]/10)*10));
 IP13 =  myIp[1]-((myIp[1]/10)*10);
-clearStrip();
-         for (uint16_t L = 0; L < (IP13); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
-      clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
-
-      delay(3000);
-}
-
-Serial.println( myIp[2]);
-if ((myIp[2])<1)
-      {
-                clearStrip();
-          strip.setPixelColor(0,255,0,0); 
-      strip.show(); //Output on strip
-
-      delay(5000);
          clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
+         for (uint16_t L = 0; L < (IP13); L++) {
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 
-      delay(3000);
-      }
-else 
-{
+clearStrip();
+     strip.setPixelColor(17,255,0,0); 
+     strip.show(); //Output on strip
+     delay(1000);
+     clearStrip();
+     delay(500);
+     strip.show(); //Output on strip
+         
+Serial.println( myIp[2]);
+
 Serial.println(myIp[2]/100);
 IP21 = myIp[2]/100;
 clearStrip();
          for (uint16_t L = 0; L < (IP21); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 Serial.println((myIp[2]-((myIp[2]/100)*100))/10);
 IP22 = (myIp[2]-((myIp[2]/100)*100))/10;
 
-      clearStrip();
+     clearStrip();
          for (uint16_t L = 0; L < (IP22); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-      
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 
 Serial.println(myIp[2]-((myIp[2]/10)*10));
 IP23 =  myIp[2]-((myIp[2]/10)*10);
 clearStrip();
          for (uint16_t L = 0; L < (IP23); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
-      clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
-
-      delay(3000);
-}
-
-Serial.println( myIp[3]);
-if ((myIp[3])<1)
-      {
-                clearStrip();
-          strip.setPixelColor(0,255,0,0); 
-      strip.show(); //Output on strip
-
-      delay(5000);
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
          clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 
-      delay(3000);
-      }
-else 
-{
+         clearStrip();
+     strip.setPixelColor(17,255,0,0); 
+     strip.show(); //Output on strip
+     delay(1000);
+     clearStrip();
+     delay(500);
+     strip.show(); //Output on strip
+Serial.println( myIp[3]);
 
 Serial.println(myIp[3]/100);
 IP31 = myIp[3]/100;
 clearStrip();
          for (uint16_t L = 0; L < (IP31); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 
 Serial.println((myIp[3]-((myIp[3]/100)*100))/10);
 IP32 = (myIp[3]-((myIp[3]/100)*100))/10;
 clearStrip();
          for (uint16_t L = 0; L < (IP32); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
 Serial.println(myIp[3]-((myIp[3]/10)*10));
 IP33 =  myIp[3]-((myIp[3]/10)*10);
-
 clearStrip();
          for (uint16_t L = 0; L < (IP33); L++) {
-        
+         strip.setPixelColor(17,0,255,0); 
+         strip.show(); //Output on strip
+         delay(1000);
+         clearStrip();
+         strip.show(); //Output on strip
+         delay(500);
+ }
+         clearStrip();
+         strip.setPixelColor(17,0,255,255);
+         strip.show(); //Output on strip
+         delay(2000);
+clearStrip();
+     strip.setPixelColor(17,255,0,0); 
+     strip.show(); //Output on strip
+     delay(1000);
+     clearStrip();
+     delay(500);
+     strip.show(); //Output on strip
 
-        strip.setPixelColor(L,0,255,0); 
-      }
-      strip.show(); //Output on strip
-
-      delay(5000);
-
-      clearStrip();
-          strip.setPixelColor(0,0,0,255); 
-      strip.show(); //Output on strip
-
-      delay(3000);
-}
   server.begin();
 
 
