@@ -14,3 +14,12 @@ SDL (CCS811) auf D1 des ESP
 WAK (CCS811) auf GND !!!!!
 VCC (CSS811) auf 3,3V(ESP)
 GND ....
+
+
+
+Benötigte libraries:
+
+- unter “Datei”, “Voreinstellungen” folgende zusätzliche Boardverwalter-URL hinzufügen: http://arduino.esp8266.com/stable/package_esp8266com_index.json
+- unter "Werkzeuge" >> "Board" >> "Boardverwalter" >>"ESP8266 Boards" den WeMos D1 R1 auswählen
+- https://github.com/maarten-pennings/CCS811 als zip downloaden und über "Sketch" >> "Bibliothek einbinden" >> ".ZIP-Bibliothek hinzufügen" und CCS811-master.zip auswählen
+-Adafruit NeoPixel by Adafruit ("Werkzeuge" >> "Bibliotheken verwalten" nach Adafruit Neopixel suchen und installieren
