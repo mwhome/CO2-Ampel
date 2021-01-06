@@ -1,5 +1,5 @@
 # CO2-Ampel
-Eine CO2 Ampel mit esp8266, ccs811 Sensor und WS2812
+Eine CO2 Ampel mit esp8266, ccs811 Senso, WS2812 und OLED Display 128x32
 
 Im Code die wlan Zugangsdaten eintragen.
 Nach dem Einschalten blinkt die 17. LED rot bis eine Verbindung aufgebaut ist.
@@ -21,5 +21,6 @@ Benötigte libraries:
 
 - unter “Datei”, “Voreinstellungen” folgende zusätzliche Boardverwalter-URL hinzufügen: http://arduino.esp8266.com/stable/package_esp8266com_index.json
 - unter "Werkzeuge" >> "Board" >> "Boardverwalter" >>"ESP8266 Boards" den WeMos D1 R1 auswählen
-- https://github.com/maarten-pennings/CCS811 als zip downloaden und über "Sketch" >> "Bibliothek einbinden" >> ".ZIP-Bibliothek hinzufügen" und CCS811-master.zip auswählen
-- Adafruit NeoPixel by Adafruit ("Werkzeuge" >> "Bibliotheken verwalten" nach Adafruit Neopixel suchen und installieren
+- Sparkfun CCS811 Arduino Library  ("Werkzeuge" >> "Bibliotheken verwalten" nach Sparkfun CCS811 suchen und installieren)
+- Adafruit NeoPixel by Adafruit ("Werkzeuge" >> "Bibliotheken verwalten" nach Adafruit Neopixel suchen und installieren)
+- Adafruit SSD1306  ("Werkzeuge" >> "Bibliotheken verwalten" nach Adafruit SSD1306 suchen und installieren)
