@@ -1,32 +1,58 @@
+
 /*********
-CO2 Luftqualität mit esp8266, ccs811 und ws2812
+CO2 Luftqualität mit esp8266 oder Arduino Nano, ccs811, ws2812 und optional mit DHT22 Temperatursensor und OLED Display 128*32
 *********/
-
-// Load Wi-Fi library
-#include <ESP8266WiFi.h>
-
-
-#include <Wire.h>    // I2C library
-#include "ccs811.h"  // CCS811 library
+// Anschluss am Wemos D1
+//SDA an D2, SCL an D1, Vcc an 3,3V und GND an GND
+//WS2812 an 5V (Vin), GND und Data an D8
+//DHT22 an 3,3V, GND und out an D6
+//
+//Anschluss am Arduino Nano
+//SDA an A4, SCL an A5, Vcc an 3,3V und GND an GND
+//WS2812 an 5V (Vin), GND und Data an A1
+//DHT22 an 3,3V, GND und out an D12
+//
+#include <ESP8266WiFi.h>   //auskommentieren wenn ein Arduino Nano verwendet wird
+#include "SparkFunCCS811.h" 
+#include <SPI.h>
+#include <Wire.h>
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
 
-// Wiring for ESP8266 NodeMCU boards: VDD to 3V3, GND to GND, SDA to D2, SCL to D1, nWAKE to D3 (or GND)
-CCS811 ccs811(D3); // nWAKE on D3
-
-#define NUM_PIXEL 35
-#define PIN 15
+#define CCS811_ADDR 0x5A //Alternative I2C Addresse des CCS811 Sensors
+#define NUM_PIXEL 35    //Anzahl der WS2812 LEDs
+#define PIN 15          // Data Anschluss des WS2812 Wemos D8
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_PIXEL, PIN, NEO_GRB + NEO_KHZ800);
+CCS811 mySensor(CCS811_ADDR);     //CCS811 Sensorlibrary von Sparkfun
+#define DHTPIN D6        //Anschluss des DHT Sensors Wemos D6
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define DHTTYPE    DHT22     // DHT 22 (AM2302)
+
+#define DISPLAY     //auskommentieren, wenn kein Display verwendet wird
+//#define DHTSENSOR   //auskommentieren, wenn kein DHT22 Sensor verwendet wird
+#define WLAN        //auskommentieren, wenn kein WLAN verwendet wird (z.B. bei verwendung des Arduino Nanos)
+
+
+DHT_Unified dht(DHTPIN, DHTTYPE);
+uint32_t delayMS;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
 // Replace with your network credentials
-const char* ssid     = "yourSSID";
-const char* password = "yourPassword";
+const char* ssid     = "wlanSSID";
+const char* password = "WLAN Passwort";
 
 // Set web server port number to 80
 WiFiServer server(80);
 
 // Variable to store the HTTP request
 String header;
-
+int TEMP = 0;
+int RLF = 0;
 unsigned int CO2 = 400;
 unsigned int TVOC = 0;
 
@@ -53,34 +79,44 @@ unsigned long previousTime = 0;
 // Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
+
+
 void setup() {
-  Serial.begin(115200);
-  Serial.println("");
-  Serial.println("setup: Starting CCS811 basic demo");
-  Serial.print("setup: ccs811 lib  version: "); Serial.println(CCS811_VERSION);
-  strip.begin();
+ Serial.begin(115200);
+    Wire.begin();
+      dht.begin();
+   strip.begin();
   clearStrip();
   strip.show();
   strip.setBrightness(200);
-  // Enable I2C
-  Wire.begin();
+ 
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
 
-  // Enable CCS811
-  ccs811.set_i2cdelay(50); // Needed for ESP8266 because it doesn't handle I2C clock stretch correctly
-  bool ok = ccs811.begin();
-  if ( !ok ) Serial.println("setup: CCS811 begin FAILED");
+if (mySensor.begin() == false)
+  {
+    Serial.print("CCS811 error. Please check wiring. Freezing...");
+    while (1)
+      ;
+  }
+  // Clear the buffer
+  display.clearDisplay();
 
-  // Print CCS811 versions
-  Serial.print("setup: hardware    version: "); Serial.println(ccs811.hardware_version(), HEX);
-  Serial.print("setup: bootloader  version: "); Serial.println(ccs811.bootloader_version(), HEX);
-  Serial.print("setup: application version: "); Serial.println(ccs811.application_version(), HEX);
-
-  // Start measuring
-  ok = ccs811.start(CCS811_MODE_1SEC);
-  if ( !ok ) Serial.println("setup: CCS811 start FAILED");
-
-
-  // Connect to Wi-Fi network with SSID and password
+  // text display tests
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.println("CO2 Ampel");
+  display.setTextSize(1);
+    display.setCursor(0,16);
+  display.println("Markus Weber");
+  display.display();
+  
+  display.clearDisplay();
+ // Connect to Wi-Fi network with SSID and password
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
@@ -95,26 +131,33 @@ void setup() {
   }
   // Print local IP address and start web server
   Serial.println("");
-
-
-  
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-       clearStrip();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+ display.println(WiFi.localIP());
+ display.display();
+  display.clearDisplay();
+  
+      clearStrip();
          for (uint16_t L = 0; L < (NUM_PIXEL); L++) {
-        
-
-        strip.setPixelColor(L,0,255,0); 
+                strip.setPixelColor(L,0,255,0); 
       }
       strip.show(); //Output on strip
-
       delay(2000);
   
 
-IPAddress myIp = WiFi.localIP();
-Serial.println( myIp[0]);
 
+
+
+
+ 
+IPAddress myIp = WiFi.localIP();
+
+Serial.println( myIp[0]);
 Serial.println(myIp[0]/100);
 IP01 = myIp[0]/100;
          clearStrip();
@@ -338,67 +381,154 @@ clearStrip();
      delay(500);
      strip.show(); //Output on strip
 
-  server.begin();
 
 
+
+#ifdef DHTSENSOR
+ // Print temperature sensor details.
+  sensor_t sensor;
+  dht.temperature().getSensor(&sensor);
+  Serial.println(F("------------------------------------"));
+  Serial.println(F("Temperature Sensor"));
+  Serial.print  (F("Sensor Type: ")); Serial.println(sensor.name);
+  Serial.print  (F("Driver Ver:  ")); Serial.println(sensor.version);
+  Serial.print  (F("Unique ID:   ")); Serial.println(sensor.sensor_id);
+  Serial.print  (F("Max Value:   ")); Serial.print(sensor.max_value); Serial.println(F("°C"));
+  Serial.print  (F("Min Value:   ")); Serial.print(sensor.min_value); Serial.println(F("°C"));
+  Serial.print  (F("Resolution:  ")); Serial.print(sensor.resolution); Serial.println(F("°C"));
+  Serial.println(F("------------------------------------"));
+  // Print humidity sensor details.
+  dht.humidity().getSensor(&sensor);
+  Serial.println(F("Humidity Sensor"));
+  Serial.print  (F("Sensor Type: ")); Serial.println(sensor.name);
+  Serial.print  (F("Driver Ver:  ")); Serial.println(sensor.version);
+  Serial.print  (F("Unique ID:   ")); Serial.println(sensor.sensor_id);
+  Serial.print  (F("Max Value:   ")); Serial.print(sensor.max_value); Serial.println(F("%"));
+  Serial.print  (F("Min Value:   ")); Serial.print(sensor.min_value); Serial.println(F("%"));
+  Serial.print  (F("Resolution:  ")); Serial.print(sensor.resolution); Serial.println(F("%"));
+  Serial.println(F("------------------------------------"));
+  // Set delay between sensor readings based on sensor details.
+  delayMS = sensor.min_delay / 1000;
+
+ 
+#endif
+
+  
+server.begin();
+  
 }
+ 
+void loop() {
+ delay(delayMS);
+   //Check to see if data is ready with .dataAvailable()
+  if (mySensor.dataAvailable())
+  {
+    //If so, have the sensor read and calculate the results.
+    //Get them later
+    mySensor.readAlgorithmResults();
 
-void loop(){
-  // Read
-  uint16_t eco2, etvoc, errstat, raw;
-  ccs811.read(&eco2, &etvoc, &errstat, &raw);
-CO2 = (eco2);
-TVOC = (etvoc);
-  // Print measurement results based on status
-  if ( errstat == CCS811_ERRSTAT_OK ) {
-    Serial.print("CCS811: ");
-    Serial.print("eco2=");  Serial.print(eco2);     Serial.print(" ppm  ");
-    Serial.print("etvoc="); Serial.print(etvoc);    Serial.print(" ppb  ");
+    Serial.print("CO2: ");
+    //Returns calculated CO2 reading
+    Serial.print(mySensor.getCO2());
+    Serial.print(" ppm  tVOC: ");
+    //Returns calculated TVOC reading
+    Serial.print(mySensor.getTVOC());
+     Serial.print(" ppb");
+    
     Serial.println();
-  } else if ( errstat == CCS811_ERRSTAT_OK_NODATA ) {
-    Serial.println("CCS811: waiting for (new) data");
-  } else if ( errstat & CCS811_ERRSTAT_I2CFAIL ) {
-    Serial.println("CCS811: I2C error");
-  } else {
-    Serial.print("CCS811: errstat="); Serial.print(errstat, HEX);
-    Serial.print("="); Serial.println( ccs811.errstat_str(errstat) );
   }
 
-
-  if ((eco2) < 2100) {
-
-    { int t = map(eco2, 350, 2100, 0, NUM_PIXEL);
-
-      for (uint16_t L = 0; L < t; L++) {
-        clearStrip();
-
-        strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
-      }
-      strip.show(); //Output on strip
-
-      delay(1000);
-    }
+  delay(10); //Don't spam the I2C bus
+ 
+#ifdef DHTSENSOR  
+  // Get temperature event and print its value.
+  sensors_event_t event;
+  dht.temperature().getEvent(&event);
+  if (isnan(event.temperature)) {
+    Serial.println(F("Error reading temperature!"));
   }
-
   else {
-    (eco2) = 2100;
-    { int t = map(eco2, 350, 2100, 0, NUM_PIXEL);
+    Serial.print(F("Temperatur: "));
+    Serial.print(event.temperature-2);
+    Serial.println(F("°C"));
+     display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
+  display.print(F("T:"));
+  display.print(event.temperature-2);
+  display.print((char)247);
+  display.print(F("C"));
+  TEMP = event.temperature-2;
+  }
+  // Get humidity event and print its value.
+  dht.humidity().getEvent(&event);
+  if (isnan(event.relative_humidity)) {
+    Serial.println(F("Error reading humidity!"));
+  }
+  else {
+    Serial.print(F("Humidity: "));
+    Serial.print(event.relative_humidity);
+    Serial.println(F("%"));
+    display.setCursor(61,0);
+    display.print(F("F:"));
+    display.print(event.relative_humidity);
+    display.println(F("%"));
+    RLF = event.relative_humidity;
+  }
+
+#endif  
+      display.setCursor(0,16);
+    display.print(F("CO2:"));
+    display.print(mySensor.getCO2());
+    display.println(F("ppm"));
+      display.setCursor(61,16);
+    display.print(F("tVOC:"));
+    display.print(mySensor.getTVOC());
+    display.println(F("ppb"));
+    
+  delay(1000);
+  
+  // text display 
+
+  display.display();
+  
+  
+  display.clearDisplay();
 
 
+  
+
+
+
+CO2 = mySensor.getCO2();
+TVOC = mySensor.getTVOC();
+
+  if ((CO2) < 2100) {
+    { int t = map(CO2, 350, 2100, 0, NUM_PIXEL);
       for (uint16_t L = 0; L < t; L++) {
         clearStrip();
         strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
       }
       strip.show(); //Output on strip
-
       delay(1000);
     }
-
-
+  }
+  else {
+    (CO2) = 2100;
+    { int t = map(CO2, 350, 2100, 0, NUM_PIXEL);
+     for (uint16_t L = 0; L < t; L++) {
+        clearStrip();
+        strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
+      }
+      strip.show(); //Output on strip
+      delay(1000);
+    }
     // Wait
     delay(1000);
   }
-}
+ 
+  
+ }
 //Color wheel ################################################################
 uint32_t wheel(byte WheelPos) {
   if (WheelPos < 85) {
@@ -458,16 +588,30 @@ void clearStrip() {
             // Display current state
             client.println("<p>" );
             client.println("CO2:");
-            client.println(CO2);
+            client.println(mySensor.getCO2());
             client.print("ppm");
             client.println("<p>");
 
             client.println("<p>" );
             client.println("TVOC:");
-            client.println(TVOC);
+            client.println(mySensor.getTVOC());
             client.print("ppb");
             client.println("<p>");
-            
+#ifdef DHTSENSOR
+            client.println("<p>" );
+            client.println("Temperatur: ");
+            client.println(TEMP);
+            client.print(char(176));
+            client.print("C");
+            client.println("<p>");
+
+
+             client.println("<p>" );
+            client.println("rel. Luftfeuchte: ");
+            client.println(RLF);
+            client.print("%");
+            client.println("<p>");
+#endif            
             client.println("WiFi connected.");
             client.println("<p>");
             client.println("IP address: ");
