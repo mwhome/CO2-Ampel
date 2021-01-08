@@ -1,8 +1,8 @@
 # CO2-Ampel
-Eine CO2 Ampel mit esp8266, ccs811 Senso, WS2812 und OLED Display 128x32
+Eine CO2 Ampel mit esp8266, ccs811 Sensor, beliebig vielen WS2812 LEDs und OLED Display 128x32
 
-Im Code die wlan Zugangsdaten eintragen.
-Nach dem Einschalten blinkt die 17. LED rot bis eine Verbindung aufgebaut ist.
+Im Code die Anzahl der WS2812 LEDs anpassen, sollte kein DHT-Sensor verwendet werden die entsprechende Zeile "#define DHTSENSOR" auskommentieren.
+Nach dem erstmaligen Einschalten sich mit dem Accesspoint "CO2 Ampel" und dem Passwort "12345678" verbinden und das eigene Wifi auswählen.
 Nach kurzem Aufleuchten aller LEDs in grün wird die IP-Adresse durch die LEDs ausgegeben.
 Die 17. LED blinkt entsprechend, blau bedeutet nächste Zahl, rot bedeutet Punkt (also 192.168.0.25 wäre also 1 mal grün, blau, 9mal grün, blau, 2mal grün, blau, rot, 1mal grün, blau 6mal grün, blau, 8mal grün, blau, rot, blau, blau, blau, rot, blau, 2mal grün,blau, 5mal grün, blau, rot)
 
