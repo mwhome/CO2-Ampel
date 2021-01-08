@@ -12,6 +12,7 @@ CO2 Luftqualität mit esp8266 oder Arduino Nano, ccs811, ws2812 und optional mit
 //WS2812 an 5V (Vin), GND und Data an A1
 //DHT22 an 3,3V, GND und out an D12
 //
+#include <FS.h>         
 #include <ESP8266WiFi.h>   //auskommentieren wenn ein Arduino Nano verwendet wird
 #include "SparkFunCCS811.h" 
 #include <SPI.h>
@@ -22,6 +23,9 @@ CO2 Luftqualität mit esp8266 oder Arduino Nano, ccs811, ws2812 und optional mit
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h> 
 
 #define CCS811_ADDR 0x5A //Alternative I2C Addresse des CCS811 Sensors
 #define NUM_PIXEL 35    //Anzahl der WS2812 LEDs
@@ -33,18 +37,17 @@ CCS811 mySensor(CCS811_ADDR);     //CCS811 Sensorlibrary von Sparkfun
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 #define DHTTYPE    DHT22     // DHT 22 (AM2302)
 
-#define DISPLAY     //auskommentieren, wenn kein Display verwendet wird
-//#define DHTSENSOR   //auskommentieren, wenn kein DHT22 Sensor verwendet wird
+
+
+#define HOSTNAME "CO2 Ampel" //Name der Anzeige (Webseite)
+//#define NODISPLAY     //kommentieren, wenn ein Display verwendet wird
+#define DHTSENSOR   //auskommentieren, wenn kein DHT22 Sensor verwendet wird
 #define WLAN        //auskommentieren, wenn kein WLAN verwendet wird (z.B. bei verwendung des Arduino Nanos)
 
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
 uint32_t delayMS;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
-
-// Replace with your network credentials
-const char* ssid     = "wlanSSID";
-const char* password = "WLAN Passwort";
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -53,6 +56,7 @@ WiFiServer server(80);
 String header;
 int TEMP = 0;
 int RLF = 0;
+int P = NUM_PIXEL/2;
 unsigned int CO2 = 400;
 unsigned int TVOC = 0;
 
@@ -89,7 +93,37 @@ void setup() {
   clearStrip();
   strip.show();
   strip.setBrightness(200);
- 
+  #ifdef WLAN
+  //WiFiManager
+  //Local intialization. Once its business is done, there is no need to keep it around
+  WiFiManager wifiManager;
+  //exit after config instead of connecting
+  wifiManager.setBreakAfterConfig(true);
+
+  //reset settings - for testing
+  //wifiManager.resetSettings();
+
+
+  //tries to connect to last known settings
+  //if it does not connect it starts an access point with the specified name
+  //here  "AutoConnectAP" with password "password"
+  //and goes into a blocking loop awaiting configuration
+  if (!wifiManager.autoConnect("CO2Ampel", "12345678")) {
+    Serial.println("failed to connect, we should reset as see if it connects");
+    delay(3000);
+    ESP.reset();
+    delay(5000);
+  }
+
+  //if you get here you have connected to the WiFi
+  Serial.println("connected...yeey :)");
+  Serial.println(P);
+
+
+  Serial.println("local ip");
+  Serial.println(WiFi.localIP());
+#endif
+
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
     Serial.println(F("SSD1306 allocation failed"));
@@ -102,6 +136,8 @@ if (mySensor.begin() == false)
     while (1)
       ;
   }
+
+
   // Clear the buffer
   display.clearDisplay();
 
@@ -114,16 +150,15 @@ if (mySensor.begin() == false)
     display.setCursor(0,16);
   display.println("Markus Weber");
   display.display();
+  delay(2000);
   
   display.clearDisplay();
- // Connect to Wi-Fi network with SSID and password
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);
+
+#ifdef WLAN
   while (WiFi.status() != WL_CONNECTED) {
     delay(250);
     Serial.print(".");
-    strip.setPixelColor(17,255,0,0); 
+    strip.setPixelColor(P,255,0,0); 
      strip.show(); //Output on strip
      delay(250);
      clearStrip();
@@ -134,6 +169,7 @@ if (mySensor.begin() == false)
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -141,7 +177,7 @@ if (mySensor.begin() == false)
  display.println(WiFi.localIP());
  display.display();
   display.clearDisplay();
-  
+
       clearStrip();
          for (uint16_t L = 0; L < (NUM_PIXEL); L++) {
                 strip.setPixelColor(L,0,255,0); 
@@ -149,12 +185,12 @@ if (mySensor.begin() == false)
       strip.show(); //Output on strip
       delay(2000);
   
+clearStrip();
+strip.show(); //Output on strip
+
+delay(2000);
 
 
-
-
-
- 
 IPAddress myIp = WiFi.localIP();
 
 Serial.println( myIp[0]);
@@ -162,7 +198,7 @@ Serial.println(myIp[0]/100);
 IP01 = myIp[0]/100;
          clearStrip();
          for (uint16_t L = 0; L < (IP01); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -170,14 +206,17 @@ IP01 = myIp[0]/100;
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+          clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 Serial.println((myIp[0]-((myIp[0]/100)*100))/10);
 IP02 = (myIp[0]-((myIp[0]/100)*100))/10;
          clearStrip();
          for (uint16_t L = 0; L < (IP02); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -185,14 +224,17 @@ IP02 = (myIp[0]-((myIp[0]/100)*100))/10;
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();
+          strip.show(); //Output on strip
+          delay(500);
 Serial.println(myIp[0]-((myIp[0]/10)*10));
 IP03 =  myIp[0]-((myIp[0]/10)*10);
          clearStrip();
          for (uint16_t L = 0; L < (IP03); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -200,24 +242,27 @@ IP03 =  myIp[0]-((myIp[0]/10)*10);
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 
      clearStrip();
-     strip.setPixelColor(17,255,0,0); 
+     strip.setPixelColor(P,255,0,0); 
      strip.show(); //Output on strip
      delay(1000);
-     clearStrip();
+     clearStrip();strip.show(); //Output on strip
      delay(500);
-     strip.show(); //Output on strip
+     
 Serial.println( myIp[1]);
 
 Serial.println(myIp[1]/100);
 IP11 = myIp[1]/100;
          clearStrip();
          for (uint16_t L = 0; L < (IP11); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -225,15 +270,18 @@ IP11 = myIp[1]/100;
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 
 Serial.println((myIp[1]-((myIp[1]/100)*100))/10);
 IP12 = (myIp[1]-((myIp[1]/100)*100))/10;
          clearStrip();
          for (uint16_t L = 0; L < (IP12); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -241,14 +289,17 @@ IP12 = (myIp[1]-((myIp[1]/100)*100))/10;
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 Serial.println(myIp[1]-((myIp[1]/10)*10));
 IP13 =  myIp[1]-((myIp[1]/10)*10);
          clearStrip();
          for (uint16_t L = 0; L < (IP13); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -256,17 +307,20 @@ IP13 =  myIp[1]-((myIp[1]/10)*10);
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 
 clearStrip();
-     strip.setPixelColor(17,255,0,0); 
+     strip.setPixelColor(P,255,0,0); 
      strip.show(); //Output on strip
      delay(1000);
-     clearStrip();
+     clearStrip(); strip.show(); //Output on strip
      delay(500);
-     strip.show(); //Output on strip
+
          
 Serial.println( myIp[2]);
 
@@ -274,7 +328,7 @@ Serial.println(myIp[2]/100);
 IP21 = myIp[2]/100;
 clearStrip();
          for (uint16_t L = 0; L < (IP21); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -282,15 +336,18 @@ clearStrip();
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 Serial.println((myIp[2]-((myIp[2]/100)*100))/10);
 IP22 = (myIp[2]-((myIp[2]/100)*100))/10;
 
      clearStrip();
          for (uint16_t L = 0; L < (IP22); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -298,15 +355,18 @@ IP22 = (myIp[2]-((myIp[2]/100)*100))/10;
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 
 Serial.println(myIp[2]-((myIp[2]/10)*10));
 IP23 =  myIp[2]-((myIp[2]/10)*10);
 clearStrip();
          for (uint16_t L = 0; L < (IP23); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -314,24 +374,27 @@ clearStrip();
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 
          clearStrip();
-     strip.setPixelColor(17,255,0,0); 
+     strip.setPixelColor(P,255,0,0); 
      strip.show(); //Output on strip
      delay(1000);
      clearStrip();
-     delay(500);
-     strip.show(); //Output on strip
+     delay(500);strip.show(); //Output on strip
+     
 Serial.println( myIp[3]);
 
 Serial.println(myIp[3]/100);
 IP31 = myIp[3]/100;
 clearStrip();
          for (uint16_t L = 0; L < (IP31); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -339,15 +402,18 @@ clearStrip();
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 
 Serial.println((myIp[3]-((myIp[3]/100)*100))/10);
 IP32 = (myIp[3]-((myIp[3]/100)*100))/10;
 clearStrip();
          for (uint16_t L = 0; L < (IP32); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -355,14 +421,17 @@ clearStrip();
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
          delay(2000);
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+          
 Serial.println(myIp[3]-((myIp[3]/10)*10));
 IP33 =  myIp[3]-((myIp[3]/10)*10);
 clearStrip();
          for (uint16_t L = 0; L < (IP33); L++) {
-         strip.setPixelColor(17,0,255,0); 
+         strip.setPixelColor(P,0,255,0); 
          strip.show(); //Output on strip
          delay(1000);
          clearStrip();
@@ -370,16 +439,19 @@ clearStrip();
          delay(500);
  }
          clearStrip();
-         strip.setPixelColor(17,0,255,255);
+         strip.setPixelColor(P,0,255,255);
          strip.show(); //Output on strip
+
+
+#endif
          delay(2000);
-clearStrip();
-     strip.setPixelColor(17,255,0,0); 
-     strip.show(); //Output on strip
-     delay(1000);
-     clearStrip();
+              clearStrip();strip.show(); //Output on strip
+          delay(500);
+                  
+         
+     clearStrip();strip.show(); //Output on strip
      delay(500);
-     strip.show(); //Output on strip
+     
 
 
 
@@ -451,6 +523,7 @@ void loop() {
     Serial.print(F("Temperatur: "));
     Serial.print(event.temperature-2);
     Serial.println(F("°C"));
+
      display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
@@ -458,6 +531,7 @@ void loop() {
   display.print(event.temperature-2);
   display.print((char)247);
   display.print(F("C"));
+
   TEMP = event.temperature-2;
   }
   // Get humidity event and print its value.
@@ -469,6 +543,7 @@ void loop() {
     Serial.print(F("Humidity: "));
     Serial.print(event.relative_humidity);
     Serial.println(F("%"));
+
     display.setCursor(61,0);
     display.print(F("F:"));
     display.print(event.relative_humidity);
@@ -477,6 +552,7 @@ void loop() {
   }
 
 #endif  
+
       display.setCursor(0,16);
     display.print(F("CO2:"));
     display.print(mySensor.getCO2());
@@ -504,51 +580,34 @@ CO2 = mySensor.getCO2();
 TVOC = mySensor.getTVOC();
 
   if ((CO2) < 2100) {
-    { int t = map(CO2, 350, 2100, 0, NUM_PIXEL);
-      for (uint16_t L = 0; L < t; L++) {
+    { int t = map(CO2, 400, 2100, 1, NUM_PIXEL);int f = map(CO2, 400, 2100, 0, 255);
+       
         clearStrip();
-        strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
-      }
+        strip.setPixelColor((t-1),f,255-f,0); 
+     
+      
       strip.show(); //Output on strip
       delay(1000);
     }
   }
   else {
     (CO2) = 2100;
-    { int t = map(CO2, 350, 2100, 0, NUM_PIXEL);
-     for (uint16_t L = 0; L < t; L++) {
         clearStrip();
-        strip.setPixelColor(L, wheel(((0 + (L * 3)) & 255))); //Gradient from blue (cold) to green (ok) to red (warm), first value here 170 = start color, second value here 42 = end color
-      }
+        strip.setPixelColor(NUM_PIXEL-1,255,0,0); 
+        strip.show(); //Output on strip
+        delay(500); 
+         clearStrip();
       strip.show(); //Output on strip
-      delay(1000);
-    }
-    // Wait
-    delay(1000);
-  }
+      delay(500);
+     }
+  
+  
  
   
- }
-//Color wheel ################################################################
-uint32_t wheel(byte WheelPos) {
-  if (WheelPos < 85) {
-    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-  }
-  else if (WheelPos < 170) {
-    WheelPos -= 85;
-    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  }
-  else {
-    WheelPos -= 170;
-    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-  }
-}
-void clearStrip() {
-  for (int i = 0; i < NUM_PIXEL; i++) {
-    strip.setPixelColor(i, 0);
-  }
-  
-  
+ 
+
+
+#ifdef WLAN  
   WiFiClient client = server.available();   // Listen for incoming clients
 
   if (client) {                             // If a new client connects,
@@ -578,12 +637,13 @@ void clearStrip() {
             // Display the HTML web page
             client.println("<!DOCTYPE html><html>");
             client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+            client.print("<title>" + String(HOSTNAME) + "</title>");
             client.println("<link rel=\"icon\" href=\"data:,\">");
          
             
             
             // Web Page Heading
-            client.println("<body><h1>CO2 Ampel</h1>");
+            client.println("<body><h1>" + String(HOSTNAME) + "</h1>");
             
             // Display current state
             client.println("<p>" );
@@ -638,5 +698,13 @@ void clearStrip() {
     client.stop();
     Serial.println("Client disconnected.");
     Serial.println("");
+  }
+#endif
+
+}
+
+void clearStrip() {
+  for (int i = 0; i < NUM_PIXEL; i++) {
+    strip.setPixelColor(i, 0);
   }
 }
