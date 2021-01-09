@@ -24,3 +24,10 @@ Benötigte libraries:
 - Sparkfun CCS811 Arduino Library  ("Werkzeuge" >> "Bibliotheken verwalten" nach Sparkfun CCS811 suchen und installieren)
 - Adafruit NeoPixel by Adafruit ("Werkzeuge" >> "Bibliotheken verwalten" nach Adafruit Neopixel suchen und installieren)
 - Adafruit SSD1306  ("Werkzeuge" >> "Bibliotheken verwalten" nach Adafruit SSD1306 suchen und installieren)
+
+
+
+Das Gehäuse mit den Buchstaben CO2 findet man hier:
+https://www.tinkercad.com/things/ipEyfYHhAQ5
+https://www.tinkercad.com/things/5hAtBOBWlKD
+Die Buchstaben mit transparentem Filament und 3% Füllung drucken, damit sie durchscheinend sind und die Beleuchtung von unten gut gelingt. Die drei LEDs unter den Buchstaben werden nur als eine LED angesteuert (im Code eine WS2812b LED angeben), alle drei Datenleitungen der LEDs werden mit D8 am WEMOS verbunden.
